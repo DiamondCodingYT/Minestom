@@ -16,6 +16,7 @@ import net.minestom.server.data.DataContainer;
 import net.minestom.server.entity.metadata.EntityMeta;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventCallback;
+import net.minestom.server.event.EventOptions;
 import net.minestom.server.event.entity.*;
 import net.minestom.server.event.handler.EventHandler;
 import net.minestom.server.instance.Chunk;
@@ -110,6 +111,7 @@ public class Entity implements Viewable, Tickable, EventHandler, DataContainer, 
     // Events
     private final Map<Class<? extends Event>, Collection<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
     private final Map<String, Collection<EventCallback<?>>> extensionCallbacks = new ConcurrentHashMap<>();
+    private final Map<EventCallback, EventOptions> eventOptionsMap = new ConcurrentHashMap<>();
 
     protected Metadata metadata = new Metadata(this);
     protected EntityMeta entityMeta;
@@ -737,6 +739,13 @@ public class Entity implements Viewable, Tickable, EventHandler, DataContainer, 
     public Collection<EventCallback<?>> getExtensionCallbacks(String extension) {
         return extensionCallbacks.computeIfAbsent(extension, e -> new CopyOnWriteArrayList<>());
     }
+
+    @NotNull
+    @Override
+    public Map<EventCallback, EventOptions> getEventOptionsMap() {
+        return eventOptionsMap;
+    }
+
 
     /**
      * Each entity has an unique id (server-wide) which will change after a restart.

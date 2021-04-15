@@ -14,6 +14,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.pathfinding.PFInstanceSpace;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventCallback;
+import net.minestom.server.event.EventOptions;
 import net.minestom.server.event.handler.EventHandler;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
 import net.minestom.server.event.instance.InstanceTickEvent;
@@ -81,6 +82,7 @@ public abstract class Instance implements BlockModifier, Tickable, EventHandler,
 
     private final Map<Class<? extends Event>, Collection<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
     private final Map<String, Collection<EventCallback<?>>> extensionCallbacks = new ConcurrentHashMap<>();
+    private final Map<EventCallback, EventOptions> eventOptionsMap = new ConcurrentHashMap<>();
 
     // Entities present in this instance
     protected final Set<Entity> entities = ConcurrentHashMap.newKeySet();
@@ -843,6 +845,12 @@ public abstract class Instance implements BlockModifier, Tickable, EventHandler,
     @Override
     public Collection<EventCallback<?>> getExtensionCallbacks(String extension) {
         return extensionCallbacks.computeIfAbsent(extension, e -> new CopyOnWriteArrayList<>());
+    }
+
+    @NotNull
+    @Override
+    public Map<EventCallback, EventOptions> getEventOptionsMap() {
+        return eventOptionsMap;
     }
 
     // UNSAFE METHODS (need most of time to be synchronized)

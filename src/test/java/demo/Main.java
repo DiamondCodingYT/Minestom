@@ -9,10 +9,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
+import net.minestom.server.event.EventOptions;
+import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.server.ServerListPingEvent;
 import net.minestom.server.extras.optifine.OptifineSupport;
 import net.minestom.server.instance.block.BlockManager;
 import net.minestom.server.instance.block.rule.vanilla.RedstonePlacementRule;
+import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.ping.ResponseData;
 import net.minestom.server.storage.StorageManager;
 import net.minestom.server.storage.systems.FileStorageSystem;
@@ -96,6 +99,32 @@ public class Main {
 
 
 
+
+        });
+
+        // Add event listeners
+        ConnectionManager connectionManager = MinecraftServer.getConnectionManager();
+        connectionManager.addPlayerInitialization(player -> {
+
+            player.addEventCallback(PlayerChatEvent.class, event -> {
+                System.out.println("<normal>");
+            });
+
+            player.addEventCallback(PlayerChatEvent.class, event -> {
+                System.out.println("<middle>");
+            }, new EventOptions().name("middle"));
+
+            player.addEventCallback(PlayerChatEvent.class, event -> {
+                System.out.println("<first>");
+            }, new EventOptions().name("first").before("middle", "last"));
+
+            player.addEventCallback(PlayerChatEvent.class, event -> {
+                System.out.println("<last>");
+            }, new EventOptions().name("last").after("middle"));
+
+            player.addEventCallback(PlayerChatEvent.class, event -> {
+                System.out.println("<after last>");
+            }, new EventOptions().priority((byte)64));
 
         });
 

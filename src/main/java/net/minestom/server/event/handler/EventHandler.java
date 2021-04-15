@@ -2,10 +2,7 @@ package net.minestom.server.event.handler;
 
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Entity;
-import net.minestom.server.event.CancellableEvent;
-import net.minestom.server.event.Event;
-import net.minestom.server.event.EventCallback;
-import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.*;
 import net.minestom.server.extensions.IExtensionObserver;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 import net.minestom.server.instance.Instance;
@@ -39,22 +36,54 @@ public interface EventHandler extends IExtensionObserver {
     Collection<EventCallback<?>> getExtensionCallbacks(String extension);
 
     /**
+     * Returns the Map that saves the EventOptions for every EventCallback
+     *
+     * @return a Map<EventCallback, EventOptions> with the EventOptions for the EventCallback
+     */
+    @NotNull
+    Map<EventCallback, EventOptions> getEventOptionsMap();
+
+    /**
+     * See {@link #addEventCallback(Class, EventCallback, EventOptions)}
+     */
+    default <E extends Event> boolean addEventCallback(@NotNull Class<E> eventClass,
+                                                       @NotNull EventCallback<E> eventCallback) {
+        return addEventCallback(eventClass, eventCallback, new EventOptions());
+    }
+
+    /**
      * Adds a new event callback for the specified type {@code eventClass}.
      *
      * @param eventClass    the event class
      * @param eventCallback the event callback
      * @param <E>           the event type
+     * @param options       EventOptions for the Event see {@link EventOptions} for more info
      * @return true if the callback collection changed as a result of the call
      */
-    default <E extends Event> boolean addEventCallback(@NotNull Class<E> eventClass, @NotNull EventCallback<E> eventCallback) {
+    default <E extends Event> boolean addEventCallback(@NotNull Class<E> eventClass,
+                                                       @NotNull EventCallback<E> eventCallback,
+                                                       @NotNull EventOptions options) {
         String extensionSource = MinestomRootClassLoader.findExtensionObjectOwner(eventCallback);
         if(extensionSource != null) {
             MinecraftServer.getExtensionManager().getExtension(extensionSource).observe(this);
             getExtensionCallbacks(extensionSource).add(eventCallback);
         }
 
+        //ToDo: Make this callbacks Collection to something that keeps it's order like a CopyOnWriteArrayList, and sort
+        //      the callback based on it's options in the correct order
         Collection<EventCallback> callbacks = getEventCallbacks(eventClass);
+        getEventOptionsMap().put(eventCallback, options);
         return callbacks.add(eventCallback);
+    }
+
+    /**
+     * Gets the EventOptions for an EventCallback or null if none exist
+     *
+     * @param eventCallback The EventCallback who's options will be gotten
+     * @return The EventOptions or the EventCallback or null if no options are loaded
+     */
+    default EventOptions getEventOptions(@NotNull EventCallback eventCallback) {
+        return getEventOptionsMap().get(eventCallback);
     }
 
     /**
@@ -72,6 +101,7 @@ public interface EventHandler extends IExtensionObserver {
             getExtensionCallbacks(extensionSource).remove(eventCallback);
         }
 
+        getEventOptionsMap().remove(eventCallback);
         return callbacks.remove(eventCallback);
     }
 
@@ -159,6 +189,7 @@ public interface EventHandler extends IExtensionObserver {
             //  we do this because we do not have information about the event class at this point
             for(Collection<EventCallback> eventCallbacks : getEventCallbacksMap().values()) {
                 eventCallbacks.remove(callback);
+                getEventOptionsMap().remove(callback);
             }
         }
 
@@ -166,6 +197,7 @@ public interface EventHandler extends IExtensionObserver {
     }
 
     private <E extends Event> void runEvent(@NotNull Collection<EventCallback> eventCallbacks, @NotNull E event) {
+        //ToDo: ordered
         for (EventCallback<E> eventCallback : eventCallbacks) {
             eventCallback.run(event);
         }
